@@ -1,0 +1,12 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS banned BOOLEAN;
+
+UPDATE users
+SET banned = false
+WHERE banned IS NULL;
+
+ALTER TABLE users
+    ALTER COLUMN banned SET DEFAULT false;
+
+ALTER TABLE users
+    ALTER COLUMN banned SET NOT NULL;
