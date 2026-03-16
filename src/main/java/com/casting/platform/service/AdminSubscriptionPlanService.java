@@ -3,11 +3,13 @@ package com.casting.platform.service;
 import com.casting.platform.dto.request.admin.AdminSubscriptionPlanRequest;
 import com.casting.platform.dto.response.admin.AdminSubscriptionPlanResponse;
 import com.casting.platform.entity.CustomerSubscriptionPlan;
+import com.casting.platform.exception.BadRequestException;
 import com.casting.platform.repository.CustomerSubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -32,7 +34,7 @@ public class AdminSubscriptionPlanService {
 
     public AdminSubscriptionPlanResponse update(Long id, AdminSubscriptionPlanRequest req) {
         CustomerSubscriptionPlan plan = planRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Plan not found"));
+                .orElseThrow(() -> new BadRequestException("Plan not found"));
         apply(plan, req);
         planRepository.save(plan);
         return toResponse(plan);
@@ -43,6 +45,7 @@ public class AdminSubscriptionPlanService {
     }
 
     private void apply(CustomerSubscriptionPlan plan, AdminSubscriptionPlanRequest req) {
+        validateRequest(req);
         plan.setName(req.getName());
         plan.setPricePerPeriod(req.getPricePerPeriod());
         plan.setPeriodDays(req.getPeriodDays());
@@ -54,6 +57,38 @@ public class AdminSubscriptionPlanService {
         plan.setPremiumProfilePrice(req.getPremiumProfilePrice());
         plan.setPremiumProfileDays(req.getPremiumProfileDays());
         plan.setActive(req.isActive());
+        if (req.isActive()) {
+            deactivateOtherPlans(plan.getId());
+        }
+    }
+
+    private void validateRequest(AdminSubscriptionPlanRequest req) {
+        validateMoney(req.getPricePerPeriod(), "Subscription price");
+        validateMoney(req.getBoosterPrice(), "Booster price");
+        validateMoney(req.getCastingPostPrice(), "Casting post price");
+        validateMoney(req.getPremiumProfilePrice(), "Premium profile price");
+        if (req.getPremiumProfileDays() <= 0) {
+            throw new BadRequestException("Premium profile days must be greater than 0");
+        }
+    }
+
+    private void validateMoney(BigDecimal value, String fieldName) {
+        if (value == null) {
+            throw new BadRequestException(fieldName + " is required");
+        }
+        if (value.signum() < 0) {
+            throw new BadRequestException(fieldName + " cannot be negative");
+        }
+    }
+
+    private void deactivateOtherPlans(Long currentPlanId) {
+        List<CustomerSubscriptionPlan> activePlans = planRepository.findByActiveTrueOrderByIdAsc();
+        for (CustomerSubscriptionPlan activePlan : activePlans) {
+            if (currentPlanId != null && currentPlanId.equals(activePlan.getId())) {
+                continue;
+            }
+            activePlan.setActive(false);
+        }
     }
 
     private AdminSubscriptionPlanResponse toResponse(CustomerSubscriptionPlan plan) {

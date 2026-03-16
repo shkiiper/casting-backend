@@ -11,6 +11,7 @@ import com.casting.platform.entity.CastingPost;
 import com.casting.platform.entity.CustomerSubscription;
 import com.casting.platform.entity.CustomerSubscriptionPlan;
 import com.casting.platform.entity.Payment;
+import com.casting.platform.entity.PerformerProfile;
 import com.casting.platform.entity.User;
 import com.casting.platform.entity.UserRole;
 import com.casting.platform.exception.BadRequestException;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -148,12 +150,20 @@ public class PaymentService {
     public PaymentInitResponse initPerformerPremiumPayment(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        var profile = performerProfileRepository.findByOwnerId(userId)
+        validatePerformerRole(user);
+
+        PerformerProfile profile = performerProfileRepository.findByOwnerId(userId)
                 .orElseThrow(() -> new BadRequestException("Create performer profile before buying premium"));
         CustomerSubscriptionPlan plan = getActivePlan();
 
         if (plan.getPremiumProfilePrice() == null) {
             throw new BadRequestException("Premium profile price is not configured");
+        }
+        if (plan.getPremiumProfilePrice().signum() < 0) {
+            throw new BadRequestException("Premium profile price cannot be negative");
+        }
+        if (plan.getPremiumProfileDays() <= 0) {
+            throw new BadRequestException("Premium profile days must be greater than 0");
         }
 
         String externalId = "prem_" + UUID.randomUUID();
@@ -352,8 +362,14 @@ public class PaymentService {
         if (profile.getPremiumSince() == null || profile.getPremiumUntil() == null || profile.getPremiumUntil().isBefore(LocalDateTime.now())) {
             profile.setPremiumSince(LocalDateTime.now());
         }
-        profile.setPremiumUntil(base.plusDays(premiumDays));
+        LocalDateTime premiumUntil = base.plusDays(premiumDays);
+        profile.setPremiumUntil(premiumUntil);
         performerProfileRepository.save(profile);
+
+        User owner = profile.getOwner();
+        owner.setPremium(true);
+        owner.setPremiumUntil(premiumUntil);
+        userRepository.save(owner);
     }
 
     private void validateWebhookRequest(PaymentWebhookRequest request) {
@@ -380,10 +396,22 @@ public class PaymentService {
     }
 
     private CustomerSubscriptionPlan getActivePlan() {
-        return planRepository.findAll().stream()
-                .filter(CustomerSubscriptionPlan::isActive)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException("No active subscription plan configured"));
+        List<CustomerSubscriptionPlan> activePlans = planRepository.findByActiveTrueOrderByIdAsc();
+        if (activePlans.isEmpty()) {
+            throw new BadRequestException("No active subscription plan configured");
+        }
+        if (activePlans.size() > 1) {
+            throw new BadRequestException("Multiple active subscription plans configured");
+        }
+        return activePlans.get(0);
+    }
+
+    private void validatePerformerRole(User user) {
+        if (user.getRole() != UserRole.ACTOR
+                && user.getRole() != UserRole.CREATOR
+                && user.getRole() != UserRole.LOCATION_OWNER) {
+            throw new ForbiddenException("Only performers can buy profile premium");
+        }
     }
 
     private String writeDetails(Map<String, Object> details) {

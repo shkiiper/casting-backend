@@ -39,10 +39,14 @@ public class CastingService {
     private final CustomerSubscriptionPlanRepository planRepository;
 
     private CustomerSubscriptionPlan getDefaultPlan() {
-        return planRepository.findAll().stream()
-                .filter(CustomerSubscriptionPlan::isActive)
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException("No active subscription plan configured"));
+        List<CustomerSubscriptionPlan> activePlans = planRepository.findByActiveTrueOrderByIdAsc();
+        if (activePlans.isEmpty()) {
+            throw new BadRequestException("No active subscription plan configured");
+        }
+        if (activePlans.size() > 1) {
+            throw new BadRequestException("Multiple active subscription plans configured");
+        }
+        return activePlans.get(0);
     }
 
     public CastingResponse createCasting(CreateCastingRequest request) {

@@ -552,10 +552,11 @@ public class ProfileService {
     }
 
     private CustomerSubscriptionPlan getActivePlanOrNull() {
-        return planRepository.findAll().stream()
-                .filter(CustomerSubscriptionPlan::isActive)
-                .findFirst()
-                .orElse(null);
+        var activePlans = planRepository.findByActiveTrueOrderByIdAsc();
+        if (activePlans.size() != 1) {
+            return null;
+        }
+        return activePlans.get(0);
     }
 
     private <E extends Enum<E>> E parseEnum(String value, Class<E> type) {
