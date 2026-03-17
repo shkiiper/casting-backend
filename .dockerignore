@@ -2,5 +2,3 @@ target
 .git
 .idea
 *.iml
-.env
-.env.production.local
