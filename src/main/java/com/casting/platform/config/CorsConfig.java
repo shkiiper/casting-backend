@@ -16,8 +16,7 @@ public class CorsConfig {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(
                 "https://onsetcasting.com",
-                "https://www.onsetcasting.com",
-                "http://localhost:5173"
+                "https://www.onsetcasting.com"
         ));
         cfg.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"

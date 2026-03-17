@@ -61,7 +61,7 @@ payments:
 app:
   publicApiUrl: ${APP_PUBLIC_API_URL}
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://onsetcasting.com,https://www.onsetcasting.com,http://localhost:5173}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://onsetcasting.com,https://www.onsetcasting.com}
 
   upload:
     dir: /app/uploads
