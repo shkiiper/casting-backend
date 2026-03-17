@@ -52,6 +52,9 @@ public class AuthService {
     @Value("${app.tokens.passwordResetTtlMinutes:30}")
     private long passwordResetTtlMinutes;
 
+    @Value("${app.passwordResetUrl:https://onsetcasting.com/reset-password}")
+    private String passwordResetUrl;
+
     private static final SecureRandom random = new SecureRandom();
 
     /* =========================================================
@@ -187,13 +190,9 @@ public class AuthService {
 
         passwordResetTokenRepository.save(prt);
 
-        String link = "http://localhost:8080/api/auth/reset-password?token=" + prt.getToken();
+        String link = passwordResetUrl + "?token=" + prt.getToken();
 
-        emailService.send(
-                user.getEmail(),
-                "Сброс пароля",
-                "Для сброса пароля перейдите по ссылке:\n" + link
-        );
+        emailService.sendPasswordResetEmail(user.getEmail(), link);
     }
 
     public void resetPassword(ResetPasswordRequest request) {
