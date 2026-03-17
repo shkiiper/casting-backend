@@ -164,6 +164,7 @@ public class AuthService {
         }
 
         emailVerificationTokenRepository.deleteByUserId(user.getId());
+        emailVerificationTokenRepository.flush();
 
         createAndSendEmailCode(user);
     }
