@@ -56,10 +56,12 @@ jwt:
 
 payments:
   webhookSecret: ${PAYMENTS_WEBHOOK_SECRET}
-  resultRedirectUrl: ${PAYMENTS_RESULT_REDIRECT_URL}
+  resultRedirectUrl: ${PAYMENTS_RESULT_REDIRECT_URL:https://onsetcasting.com/payment/result}
 
 app:
   publicApiUrl: ${APP_PUBLIC_API_URL}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://onsetcasting.com,https://www.onsetcasting.com,http://localhost:5173}
 
   upload:
     dir: /app/uploads

@@ -18,7 +18,7 @@ public class MockPayController {
 
     private final PaymentService paymentService;
 
-    @Value("${payments.resultRedirectUrl:http://localhost:5173/payment/result}")
+    @Value("${payments.resultRedirectUrl}")
     private String resultRedirectUrl;
 
     @GetMapping(value = "/{externalId}", produces = MediaType.TEXT_HTML_VALUE)
