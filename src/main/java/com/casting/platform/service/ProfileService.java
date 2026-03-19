@@ -33,7 +33,7 @@ public class ProfileService {
     private final PerformerProfileRepository profileRepository;
     private final CustomerSubscriptionPlanRepository planRepository;
 
-    @Value("${app.public-url:http://localhost:8080}")
+    @Value("${app.publicApiUrl:http://localhost:8080}")
     private String publicUrl;
 
     /* ================= CREATE ================= */
@@ -131,6 +131,19 @@ public class ProfileService {
         return map(profile, true);
     }
 
+    public ProfileResponse updateActorVisibility(boolean published) {
+        PerformerProfile profile = getMyProfileOrThrow();
+
+        if (profile.getType() != PerformerType.ACTOR) {
+            throw new BadRequestException("Unsupported performer type");
+        }
+
+        handlePublishToggle(profile, published);
+        profileRepository.save(profile);
+
+        return map(profile, true);
+    }
+
     public ProfileResponse updateCreatorProfile(UpdateCreatorProfileRequest request) {
 
         PerformerProfile profile = getMyProfileOrThrow();
@@ -145,6 +158,19 @@ public class ProfileService {
         return map(profile, true);
     }
 
+    public ProfileResponse updateCreatorVisibility(boolean published) {
+        PerformerProfile profile = getMyProfileOrThrow();
+
+        if (profile.getType() != PerformerType.CREATOR) {
+            throw new BadRequestException("Unsupported performer type");
+        }
+
+        handlePublishToggle(profile, published);
+        profileRepository.save(profile);
+
+        return map(profile, true);
+    }
+
     public ProfileResponse updateLocationProfile(UpdateLocationProfileRequest request) {
 
         PerformerProfile profile = getMyProfileOrThrow();
@@ -154,6 +180,19 @@ public class ProfileService {
         }
 
         fillLocation(profile, request);
+        profileRepository.save(profile);
+
+        return map(profile, true);
+    }
+
+    public ProfileResponse updateLocationVisibility(boolean published) {
+        PerformerProfile profile = getMyProfileOrThrow();
+
+        if (profile.getType() != PerformerType.LOCATION) {
+            throw new BadRequestException("Unsupported performer type");
+        }
+
+        handlePublishToggle(profile, published);
         profileRepository.save(profile);
 
         return map(profile, true);

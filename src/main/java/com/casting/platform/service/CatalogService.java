@@ -22,7 +22,7 @@ public class CatalogService {
 
     private final PerformerProfileRepository profileRepository;
 
-    @Value("${app.public-url:http://localhost:8080}")
+    @Value("${app.publicApiUrl:http://localhost:8080}")
     private String publicUrl;
 
     /* ================= ACTORS ================= */

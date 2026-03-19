@@ -72,6 +72,11 @@ public class ProfileController {
         return profileService.updateActorProfile(request);
     }
 
+    @PatchMapping("/actor/visibility")
+    public ProfileResponse updateActorVisibility(@RequestParam boolean published) {
+        return profileService.updateActorVisibility(published);
+    }
+
     @PatchMapping("/creator")
     public ProfileResponse updateCreatorProfile(
             @RequestBody UpdateCreatorProfileRequest request
@@ -79,11 +84,21 @@ public class ProfileController {
         return profileService.updateCreatorProfile(request);
     }
 
+    @PatchMapping("/creator/visibility")
+    public ProfileResponse updateCreatorVisibility(@RequestParam boolean published) {
+        return profileService.updateCreatorVisibility(published);
+    }
+
     @PatchMapping("/location")
     public ProfileResponse updateLocationProfile(
             @RequestBody UpdateLocationProfileRequest request
     ) {
         return profileService.updateLocationProfile(request);
+    }
+
+    @PatchMapping("/location/visibility")
+    public ProfileResponse updateLocationVisibility(@RequestParam boolean published) {
+        return profileService.updateLocationVisibility(published);
     }
 
     /* =======================
