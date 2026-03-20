@@ -238,6 +238,7 @@ public class ProfileService {
         setContacts(p, r);
         p.setPhotoUrls(toSet(r.getPhotoUrls()));
         p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
     }
 
     private void fillCreator(PerformerProfile p, CreateCreatorProfileRequest r) {
@@ -260,6 +261,7 @@ public class ProfileService {
         setContacts(p, r);
         p.setPhotoUrls(toSet(r.getPhotoUrls()));
         p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
     }
 
     private void fillLocation(PerformerProfile p, CreateLocationProfileRequest r) {
@@ -279,6 +281,7 @@ public class ProfileService {
         setContacts(p, r);
         p.setPhotoUrls(toSet(r.getPhotoUrls()));
         p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
     }
 
     /* ================= FILL UPDATE ================= */
@@ -313,6 +316,7 @@ public class ProfileService {
 
         if (r.getPhotoUrls() != null) p.setPhotoUrls(toSet(r.getPhotoUrls()));
         if (r.getVideoUrls() != null) p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
 
         handlePublishToggle(p, r.getPublished());
     }
@@ -340,6 +344,7 @@ public class ProfileService {
 
         if (r.getPhotoUrls() != null) p.setPhotoUrls(toSet(r.getPhotoUrls()));
         if (r.getVideoUrls() != null) p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
 
         handlePublishToggle(p, r.getPublished());
     }
@@ -364,6 +369,7 @@ public class ProfileService {
 
         if (r.getPhotoUrls() != null) p.setPhotoUrls(toSet(r.getPhotoUrls()));
         if (r.getVideoUrls() != null) p.setVideoUrls(toSet(r.getVideoUrls()));
+        syncMainPhotoWithGallery(p);
 
         handlePublishToggle(p, r.getPublished());
     }
@@ -549,6 +555,22 @@ public class ProfileService {
 
     private Set<String> toSet(List<String> list) {
         return list == null ? new LinkedHashSet<>() : new LinkedHashSet<>(list);
+    }
+
+    private void syncMainPhotoWithGallery(PerformerProfile profile) {
+
+        Set<String> photoUrls = profile.getPhotoUrls();
+        String mainPhotoUrl = profile.getMainPhotoUrl();
+
+        if (photoUrls == null || photoUrls.isEmpty()) {
+            profile.setMainPhotoUrl(null);
+            profile.setPublished(false);
+            return;
+        }
+
+        if (isBlank(mainPhotoUrl) || !photoUrls.contains(mainPhotoUrl)) {
+            profile.setMainPhotoUrl(photoUrls.iterator().next());
+        }
     }
 
     private String normalizeUrl(String url) {
