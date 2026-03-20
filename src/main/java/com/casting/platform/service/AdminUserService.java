@@ -112,9 +112,10 @@ public class AdminUserService {
     public void deleteUser(Long userId) {
         User user = getUserOrThrow(userId);
         PerformerProfile profile = user.getPerformerProfile();
+        Long profileId = profile != null ? profile.getId() : null;
 
-        if (profile != null) {
-            contactViewRepository.deleteByProfileId(profile.getId());
+        if (profileId != null) {
+            contactViewRepository.deleteByProfileId(profileId);
         }
 
         emailVerificationTokenRepository.deleteByUserId(userId);
@@ -125,8 +126,6 @@ public class AdminUserService {
         contactViewRepository.deleteByCustomerId(userId);
 
         if (profile != null) {
-            user.setPerformerProfile(null);
-            userRepository.save(user);
             performerProfileRepository.delete(profile);
         }
 
