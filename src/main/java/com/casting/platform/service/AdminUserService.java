@@ -7,6 +7,13 @@ import com.casting.platform.entity.User;
 import com.casting.platform.entity.UserRole;
 import com.casting.platform.exception.BadRequestException;
 import com.casting.platform.exception.NotFoundException;
+import com.casting.platform.repository.CastingPostRepository;
+import com.casting.platform.repository.ContactViewRepository;
+import com.casting.platform.repository.CustomerSubscriptionRepository;
+import com.casting.platform.repository.EmailVerificationTokenRepository;
+import com.casting.platform.repository.PasswordResetTokenRepository;
+import com.casting.platform.repository.PaymentRepository;
+import com.casting.platform.repository.PerformerProfileRepository;
 import com.casting.platform.repository.UserRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -28,6 +35,13 @@ import java.util.Locale;
 public class AdminUserService {
 
     private final UserRepository userRepository;
+    private final PerformerProfileRepository performerProfileRepository;
+    private final ContactViewRepository contactViewRepository;
+    private final CustomerSubscriptionRepository customerSubscriptionRepository;
+    private final CastingPostRepository castingPostRepository;
+    private final PaymentRepository paymentRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserResponse> getUsers(
@@ -77,6 +91,46 @@ public class AdminUserService {
         User user = getUserOrThrow(userId);
         user.setBanned(false);
         userRepository.save(user);
+    }
+
+    public void updateProfileVisibility(Long userId, boolean published) {
+        User user = getUserOrThrow(userId);
+        PerformerProfile profile = user.getPerformerProfile();
+
+        if (profile == null) {
+            throw new NotFoundException("Profile not found");
+        }
+
+        if (published) {
+            validateProfileBeforePublish(profile);
+        }
+
+        profile.setPublished(published);
+        performerProfileRepository.save(profile);
+    }
+
+    public void deleteUser(Long userId) {
+        User user = getUserOrThrow(userId);
+        PerformerProfile profile = user.getPerformerProfile();
+
+        if (profile != null) {
+            contactViewRepository.deleteByProfileId(profile.getId());
+        }
+
+        emailVerificationTokenRepository.deleteByUserId(userId);
+        passwordResetTokenRepository.deleteByUserId(userId);
+        paymentRepository.deleteByCustomerId(userId);
+        customerSubscriptionRepository.deleteByCustomerId(userId);
+        castingPostRepository.deleteByCustomerId(userId);
+        contactViewRepository.deleteByCustomerId(userId);
+
+        if (profile != null) {
+            user.setPerformerProfile(null);
+            userRepository.save(user);
+            performerProfileRepository.delete(profile);
+        }
+
+        userRepository.delete(user);
     }
 
     private User getUserOrThrow(Long userId) {
@@ -166,10 +220,12 @@ public class AdminUserService {
             r.setContactWhatsapp(p.getContactWhatsapp());
             r.setMinRate(p.getMinRate() != null ? p.getMinRate() : p.getRentPrice());
             r.setRateUnit(p.getRateUnit() != null ? p.getRateUnit() : p.getRentPriceUnit());
+            r.setPublished(p.isPublished());
         } else {
             r.setContactPhone(user.getPhone());
             r.setContactEmail(user.getEmail());
             r.setContactTelegram(user.getTelegram());
+            r.setPublished(false);
         }
 
         r.setActive(user.isActive());
@@ -186,5 +242,17 @@ public class AdminUserService {
             }
         }
         return null;
+    }
+
+    private void validateProfileBeforePublish(PerformerProfile profile) {
+        if ((profile.getMainPhotoUrl() == null || profile.getMainPhotoUrl().isBlank())
+                && profile.getPhotoUrls() != null
+                && !profile.getPhotoUrls().isEmpty()) {
+            profile.setMainPhotoUrl(profile.getPhotoUrls().iterator().next());
+        }
+
+        if (profile.getMainPhotoUrl() == null || profile.getMainPhotoUrl().isBlank()) {
+            throw new BadRequestException("Add photo before publishing");
+        }
     }
 }

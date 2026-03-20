@@ -3,6 +3,7 @@ package com.casting.platform.repository;
 import com.casting.platform.entity.CustomerSubscription;
 import com.casting.platform.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
@@ -20,4 +21,7 @@ public interface CustomerSubscriptionRepository extends JpaRepository<CustomerSu
     Optional<CustomerSubscription> findActiveSubscription(User customer, LocalDateTime now);
 
     Optional<CustomerSubscription> findByPaymentId(String paymentId);
+
+    @Modifying(clearAutomatically = true)
+    void deleteByCustomerId(Long customerId);
 }

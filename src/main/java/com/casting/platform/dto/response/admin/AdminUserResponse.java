@@ -30,6 +30,7 @@ public class AdminUserResponse {
 
     private boolean active;
     private boolean banned;
+    private boolean published;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

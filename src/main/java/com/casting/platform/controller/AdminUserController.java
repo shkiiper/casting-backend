@@ -51,4 +51,19 @@ public class AdminUserController {
         adminUserService.unbanUser(userId);
         return new MessageResponse("User unbanned");
     }
+
+    @PostMapping("/{userId}/profile/visibility")
+    public MessageResponse updateProfileVisibility(
+            @PathVariable Long userId,
+            @RequestParam boolean published
+    ) {
+        adminUserService.updateProfileVisibility(userId, published);
+        return new MessageResponse(published ? "Profile published" : "Profile hidden");
+    }
+
+    @DeleteMapping("/{userId}")
+    public MessageResponse delete(@PathVariable Long userId) {
+        adminUserService.deleteUser(userId);
+        return new MessageResponse("User deleted");
+    }
 }
