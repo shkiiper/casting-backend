@@ -87,6 +87,7 @@ class AdminUserServiceTest {
         order.verify(castingPostRepository).deleteByCustomerId(6L);
         order.verify(contactViewRepository).deleteByCustomerId(6L);
         order.verify(performerProfileRepository).delete(profile);
+        order.verify(userRepository).flush();
         order.verify(userRepository).delete(user);
 
         assertNull(user.getPerformerProfile());

@@ -130,6 +130,7 @@ public class AdminUserService {
             user.setPerformerProfile(null);
         }
 
+        userRepository.flush();
         userRepository.delete(user);
     }
 
