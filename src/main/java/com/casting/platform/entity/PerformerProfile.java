@@ -42,7 +42,9 @@ public class PerformerProfile {
     private String city;
 
     private String mainPhotoUrl;
+    @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
     private String bio;
 
     // =====================
@@ -61,11 +63,16 @@ public class PerformerProfile {
     private String eyeColor;
     private Integer gameAgeFrom;
     private Integer gameAgeTo;
+    @Column(columnDefinition = "TEXT")
     private String skillsJson;
+    @Column(columnDefinition = "TEXT")
     private String introVideoUrl;
+    @Column(columnDefinition = "TEXT")
     private String monologueVideoUrl;
+    @Column(columnDefinition = "TEXT")
     private String selfTapeVideoUrl;
 
+    @Column(columnDefinition = "TEXT")
     private String experienceText;
     private BigDecimal minRate;
     private String rateUnit; // HOUR / DAY / PROJECT
@@ -76,7 +83,9 @@ public class PerformerProfile {
 
     private String activityType;
     private String experienceLevel;
+    @Column(columnDefinition = "TEXT")
     private String projectFormatsJson;
+    @Column(columnDefinition = "TEXT")
     private String achievements;
 
     // =====================
@@ -91,7 +100,9 @@ public class PerformerProfile {
     private String locationType;
     private LocalTime availabilityFrom;
     private LocalTime availabilityTo;
+    @Column(columnDefinition = "TEXT")
     private String rentalTerms;
+    @Column(columnDefinition = "TEXT")
     private String extraConditions;
 
     // =====================
@@ -103,6 +114,7 @@ public class PerformerProfile {
     private String contactWhatsapp;
     private String contactTelegram;
     private String contactInstagram;
+    @Column(columnDefinition = "TEXT")
     private String socialLinksJson;
 
     // =====================

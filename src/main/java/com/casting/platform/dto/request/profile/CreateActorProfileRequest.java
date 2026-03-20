@@ -1,5 +1,9 @@
 package com.casting.platform.dto.request.profile;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateActorProfileRequest {
     @NotBlank
     @Size(min = 2, max = 100)
@@ -45,7 +50,9 @@ public class CreateActorProfileRequest {
     private String bodyType;
     private String hairColor;
     private String eyeColor;
+    @JsonAlias("playingAgeMin")
     private Integer gameAgeFrom;
+    @JsonAlias("playingAgeMax")
     private Integer gameAgeTo;
 
     // JSON string for chips/multiselect, e.g. ["stunts","singing"]
@@ -70,4 +77,16 @@ public class CreateActorProfileRequest {
 
     private List<String> photoUrls;
     private List<String> videoUrls;
+
+    @JsonSetter("skillsJson")
+    public void setSkillsJson(JsonNode skillsJson) {
+        if (skillsJson == null || skillsJson.isNull()) {
+            this.skillsJson = null;
+            return;
+        }
+
+        this.skillsJson = skillsJson.isTextual()
+                ? skillsJson.asText()
+                : skillsJson.toString();
+    }
 }

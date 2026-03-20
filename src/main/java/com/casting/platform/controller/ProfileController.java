@@ -9,6 +9,7 @@ import com.casting.platform.dto.request.profile.UpdateLocationProfileRequest;
 import com.casting.platform.dto.response.profile.ProfileResponse;
 import com.casting.platform.entity.PerformerType;
 import com.casting.platform.service.ProfileService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class ProfileController {
     @PostMapping("/actor")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileResponse createActorProfile(
-            @RequestBody CreateActorProfileRequest request
+            @Valid @RequestBody CreateActorProfileRequest request
     ) {
         return profileService.createProfileForCurrentUser(
                 PerformerType.ACTOR,
@@ -38,7 +39,7 @@ public class ProfileController {
     @PostMapping("/creator")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileResponse createCreatorProfile(
-            @RequestBody CreateCreatorProfileRequest request
+            @Valid @RequestBody CreateCreatorProfileRequest request
     ) {
         return profileService.createProfileForCurrentUser(
                 PerformerType.CREATOR,
@@ -49,7 +50,7 @@ public class ProfileController {
     @PostMapping("/location")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileResponse createLocationProfile(
-            @RequestBody CreateLocationProfileRequest request
+            @Valid @RequestBody CreateLocationProfileRequest request
     ) {
         return profileService.createProfileForCurrentUser(
                 PerformerType.LOCATION,
@@ -67,7 +68,7 @@ public class ProfileController {
 
     @PatchMapping("/actor")
     public ProfileResponse updateActorProfile(
-            @RequestBody UpdateActorProfileRequest request
+            @Valid @RequestBody UpdateActorProfileRequest request
     ) {
         return profileService.updateActorProfile(request);
     }
@@ -79,7 +80,7 @@ public class ProfileController {
 
     @PatchMapping("/creator")
     public ProfileResponse updateCreatorProfile(
-            @RequestBody UpdateCreatorProfileRequest request
+            @Valid @RequestBody UpdateCreatorProfileRequest request
     ) {
         return profileService.updateCreatorProfile(request);
     }
@@ -91,7 +92,7 @@ public class ProfileController {
 
     @PatchMapping("/location")
     public ProfileResponse updateLocationProfile(
-            @RequestBody UpdateLocationProfileRequest request
+            @Valid @RequestBody UpdateLocationProfileRequest request
     ) {
         return profileService.updateLocationProfile(request);
     }
