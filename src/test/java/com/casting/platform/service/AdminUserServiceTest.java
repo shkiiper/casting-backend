@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.mockito.Mockito.inOrder;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -87,6 +88,8 @@ class AdminUserServiceTest {
         order.verify(contactViewRepository).deleteByCustomerId(6L);
         order.verify(performerProfileRepository).delete(profile);
         order.verify(userRepository).delete(user);
+
+        assertNull(user.getPerformerProfile());
 
         verifyNoMoreInteractions(
                 userRepository,

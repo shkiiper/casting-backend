@@ -127,6 +127,7 @@ public class AdminUserService {
 
         if (profile != null) {
             performerProfileRepository.delete(profile);
+            user.setPerformerProfile(null);
         }
 
         userRepository.delete(user);
