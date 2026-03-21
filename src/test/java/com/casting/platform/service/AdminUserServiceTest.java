@@ -144,4 +144,32 @@ class AdminUserServiceTest {
                 () -> adminUserService.sendMissingPhotoReminder(8L)
         );
     }
+
+    @Test
+    void sendMissingPhotoReminderSendsEmailWhenUserHasNoProfile() {
+        User user = new User();
+        user.setId(14L);
+        user.setEmail("kanyshaitn@gmail.com");
+
+        when(userRepository.findById(14L)).thenReturn(Optional.of(user));
+
+        adminUserService.sendMissingPhotoReminder(14L);
+
+        verify(emailService).sendMissingPhotoReminderEmail("kanyshaitn@gmail.com");
+    }
+
+    @Test
+    void sendMissingPhotoReminderFailsWhenUserAvatarAlreadyExists() {
+        User user = new User();
+        user.setId(15L);
+        user.setEmail("user@example.com");
+        user.setAvatarUrl("https://cdn.example.com/avatar.jpg");
+
+        when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+
+        Assertions.assertThrows(
+                com.casting.platform.exception.BadRequestException.class,
+                () -> adminUserService.sendMissingPhotoReminder(15L)
+        );
+    }
 }

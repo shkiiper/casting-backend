@@ -114,11 +114,7 @@ public class AdminUserService {
         User user = getUserOrThrow(userId);
         PerformerProfile profile = user.getPerformerProfile();
 
-        if (profile == null) {
-            throw new NotFoundException("Profile not found");
-        }
-
-        if (hasProfilePhoto(profile)) {
+        if (hasAnyPhoto(user, profile)) {
             throw new BadRequestException("User already has profile photo");
         }
 
@@ -278,5 +274,13 @@ public class AdminUserService {
         }
 
         return false;
+    }
+
+    private boolean hasAnyPhoto(User user, PerformerProfile profile) {
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+            return true;
+        }
+
+        return profile != null && hasProfilePhoto(profile);
     }
 }
