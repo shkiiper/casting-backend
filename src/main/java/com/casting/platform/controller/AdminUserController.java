@@ -61,6 +61,12 @@ public class AdminUserController {
         return new MessageResponse(published ? "Profile published" : "Profile hidden");
     }
 
+    @PostMapping("/{userId}/notify-missing-photo")
+    public MessageResponse notifyMissingPhoto(@PathVariable Long userId) {
+        adminUserService.sendMissingPhotoReminder(userId);
+        return new MessageResponse("Photo reminder email sent");
+    }
+
     @DeleteMapping("/{userId}")
     public MessageResponse delete(@PathVariable Long userId) {
         adminUserService.deleteUser(userId);

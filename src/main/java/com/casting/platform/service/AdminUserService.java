@@ -42,6 +42,7 @@ public class AdminUserService {
     private final PaymentRepository paymentRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserResponse> getUsers(
@@ -107,6 +108,21 @@ public class AdminUserService {
 
         profile.setPublished(published);
         performerProfileRepository.save(profile);
+    }
+
+    public void sendMissingPhotoReminder(Long userId) {
+        User user = getUserOrThrow(userId);
+        PerformerProfile profile = user.getPerformerProfile();
+
+        if (profile == null) {
+            throw new NotFoundException("Profile not found");
+        }
+
+        if (hasProfilePhoto(profile)) {
+            throw new BadRequestException("User already has profile photo");
+        }
+
+        emailService.sendMissingPhotoReminderEmail(user.getEmail());
     }
 
     public void deleteUser(Long userId) {
@@ -246,14 +262,21 @@ public class AdminUserService {
     }
 
     private void validateProfileBeforePublish(PerformerProfile profile) {
-        if ((profile.getMainPhotoUrl() == null || profile.getMainPhotoUrl().isBlank())
-                && profile.getPhotoUrls() != null
-                && !profile.getPhotoUrls().isEmpty()) {
-            profile.setMainPhotoUrl(profile.getPhotoUrls().iterator().next());
-        }
-
-        if (profile.getMainPhotoUrl() == null || profile.getMainPhotoUrl().isBlank()) {
+        if (!hasProfilePhoto(profile)) {
             throw new BadRequestException("Add photo before publishing");
         }
+    }
+
+    private boolean hasProfilePhoto(PerformerProfile profile) {
+        if (profile.getMainPhotoUrl() != null && !profile.getMainPhotoUrl().isBlank()) {
+            return true;
+        }
+
+        if (profile.getPhotoUrls() != null && !profile.getPhotoUrls().isEmpty()) {
+            profile.setMainPhotoUrl(profile.getPhotoUrls().iterator().next());
+            return true;
+        }
+
+        return false;
     }
 }

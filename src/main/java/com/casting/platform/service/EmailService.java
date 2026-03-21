@@ -88,4 +88,32 @@ public class EmailService {
 
         sendHtml(email, subject, body);
     }
+
+    public void sendMissingPhotoReminderEmail(String email) {
+        String subject = "Добавьте фото в профиль";
+
+        String body = """
+            <div style="margin:0;padding:24px;background:#f4f6fb;font-family:Arial,sans-serif;color:#1f2937;">
+              <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px;border:1px solid #e5e7eb;">
+                <div style="font-size:24px;font-weight:700;margin-bottom:12px;color:#111827;">Добавьте фото в профиль</div>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">
+                  В вашем профиле пока нет фотографии.
+                </p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">
+                  Чтобы профиль отображался в каталоге и выглядел полноценно для клиентов, пожалуйста, загрузите фото.
+                </p>
+                <div style="margin:24px 0;padding:18px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;">
+                  <p style="margin:0;font-size:14px;line-height:1.6;color:#4b5563;">
+                    После добавления фотографии ваш профиль будет лучше представлен в каталоге и станет заметнее для заказчиков.
+                  </p>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#6b7280;">
+                  Если фото уже загружено, просто проигнорируйте это письмо.
+                </p>
+              </div>
+            </div>
+            """;
+
+        sendHtml(email, subject, body);
+    }
 }

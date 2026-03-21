@@ -10,6 +10,7 @@ import com.casting.platform.repository.PasswordResetTokenRepository;
 import com.casting.platform.repository.PaymentRepository;
 import com.casting.platform.repository.PerformerProfileRepository;
 import com.casting.platform.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +21,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.inOrder;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +51,9 @@ class AdminUserServiceTest {
 
     @Mock
     private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private AdminUserService adminUserService;
@@ -101,6 +106,42 @@ class AdminUserServiceTest {
                 paymentRepository,
                 emailVerificationTokenRepository,
                 passwordResetTokenRepository
+        );
+    }
+
+    @Test
+    void sendMissingPhotoReminderSendsEmailWhenProfileHasNoPhoto() {
+        User user = new User();
+        user.setId(7L);
+        user.setEmail("user@example.com");
+
+        PerformerProfile profile = new PerformerProfile();
+        profile.setOwner(user);
+        user.setPerformerProfile(profile);
+
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+
+        adminUserService.sendMissingPhotoReminder(7L);
+
+        verify(emailService).sendMissingPhotoReminderEmail("user@example.com");
+    }
+
+    @Test
+    void sendMissingPhotoReminderFailsWhenProfileAlreadyHasPhoto() {
+        User user = new User();
+        user.setId(8L);
+        user.setEmail("user@example.com");
+
+        PerformerProfile profile = new PerformerProfile();
+        profile.setOwner(user);
+        profile.setMainPhotoUrl("https://cdn.example.com/photo.jpg");
+        user.setPerformerProfile(profile);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(user));
+
+        Assertions.assertThrows(
+                com.casting.platform.exception.BadRequestException.class,
+                () -> adminUserService.sendMissingPhotoReminder(8L)
         );
     }
 }
