@@ -1,5 +1,9 @@
 package com.casting.platform.dto.request.profile;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -7,14 +11,15 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateCreatorProfileRequest {
+
+    private Boolean published;
 
     @Size(max = 100)
     private String firstName;
     @Size(max = 100)
     private String lastName;
-    @Size(max = 255)
-    private String displayName;
 
     @Size(max = 255)
     private String city;
@@ -24,29 +29,20 @@ public class CreateCreatorProfileRequest {
     @Size(max = 5000)
     private String bio;
 
-    private String activityType;
-    @Size(max = 5000)
-    private String experienceText;
     private String experienceLevel;
-
-    // JSON string, e.g. ["commercial","music-video"]
+    @JsonAlias("projectFormatsJson")
     @Size(max = 5000)
-    private String projectFormatsJson;
+    private String projectFormats;
+    @JsonAlias("achievements")
     @Size(max = 5000)
-    private String achievements;
-
-    // JSON string, e.g. ["directing","editing"]
+    private String caseHighlights;
+    @JsonAlias("skillsJson")
     @Size(max = 5000)
-    private String skillsJson;
+    private String skills;
+    private String activityType;
 
     private BigDecimal minRate;
     private String rateUnit;
-
-    /**
-     * JSON string for socials/portfolio urls
-     */
-    @Size(max = 5000)
-    private String socialLinksJson;
 
     @Size(max = 255)
     private String contactPhone;
@@ -56,9 +52,48 @@ public class CreateCreatorProfileRequest {
     private String contactWhatsapp;
     @Size(max = 255)
     private String contactTelegram;
+    @JsonAlias("socialLinksJson")
     @Size(max = 255)
-    private String contactInstagram;
+    private String websiteUrl;
+    @JsonAlias("contactInstagram")
+    @Size(max = 255)
+    private String instagramUrl;
 
     private List<String> photoUrls;
     private List<String> videoUrls;
+
+    @JsonSetter("projectFormats")
+    public void setProjectFormats(JsonNode projectFormats) {
+        this.projectFormats = jsonNodeToString(projectFormats);
+    }
+
+    public void setProjectFormats(String projectFormats) {
+        this.projectFormats = projectFormats;
+    }
+
+    @JsonSetter("caseHighlights")
+    public void setCaseHighlights(JsonNode caseHighlights) {
+        this.caseHighlights = jsonNodeToString(caseHighlights);
+    }
+
+    public void setCaseHighlights(String caseHighlights) {
+        this.caseHighlights = caseHighlights;
+    }
+
+    @JsonSetter("skills")
+    public void setSkills(JsonNode skills) {
+        this.skills = jsonNodeToString(skills);
+    }
+
+    public void setSkills(String skills) {
+        this.skills = skills;
+    }
+
+    private String jsonNodeToString(JsonNode value) {
+        if (value == null || value.isNull()) {
+            return null;
+        }
+
+        return value.isTextual() ? value.asText() : value.toString();
+    }
 }

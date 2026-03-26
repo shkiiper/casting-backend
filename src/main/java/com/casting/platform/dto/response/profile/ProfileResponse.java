@@ -41,6 +41,8 @@ public class ProfileResponse {
     private String contactWhatsapp;
     private String contactTelegram;
     private String contactInstagram;
+    private String websiteUrl;
+    private String instagramUrl;
 
     // Actor
     private Gender gender;
@@ -65,6 +67,9 @@ public class ProfileResponse {
     private String projectFormatsJson;
     private String achievements;
     private String socialLinksJson;
+    private String projectFormats;
+    private String caseHighlights;
+    private String skills;
 
     // Location
     private String locationName;

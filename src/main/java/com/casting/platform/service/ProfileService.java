@@ -244,24 +244,23 @@ public class ProfileService {
     private void fillCreator(PerformerProfile p, CreateCreatorProfileRequest r) {
         p.setFirstName(r.getFirstName());
         p.setLastName(r.getLastName());
-        p.setDisplayName(r.getDisplayName());
         p.setCity(r.getCity());
         p.setMainPhotoUrl(r.getMainPhotoUrl());
         p.setDescription(r.getDescription());
         p.setBio(r.getBio());
-        p.setExperienceText(r.getExperienceText());
         p.setActivityType(r.getActivityType());
         p.setExperienceLevel(r.getExperienceLevel());
-        p.setProjectFormatsJson(r.getProjectFormatsJson());
-        p.setAchievements(r.getAchievements());
-        p.setSkillsJson(r.getSkillsJson());
+        p.setProjectFormatsJson(r.getProjectFormats());
+        p.setAchievements(r.getCaseHighlights());
+        p.setSkillsJson(r.getSkills());
         p.setMinRate(r.getMinRate());
         p.setRateUnit(r.getRateUnit());
-        p.setSocialLinksJson(r.getSocialLinksJson());
+        p.setSocialLinksJson(r.getWebsiteUrl());
         setContacts(p, r);
         p.setPhotoUrls(toSet(r.getPhotoUrls()));
         p.setVideoUrls(toSet(r.getVideoUrls()));
         syncMainPhotoWithGallery(p);
+        handlePublishToggle(p, r.getPublished());
     }
 
     private void fillLocation(PerformerProfile p, CreateLocationProfileRequest r) {
@@ -325,20 +324,18 @@ public class ProfileService {
 
         if (r.getFirstName() != null) p.setFirstName(r.getFirstName());
         if (r.getLastName() != null) p.setLastName(r.getLastName());
-        if (r.getDisplayName() != null) p.setDisplayName(r.getDisplayName());
         if (r.getCity() != null) p.setCity(r.getCity());
         if (r.getMainPhotoUrl() != null) p.setMainPhotoUrl(r.getMainPhotoUrl());
         if (r.getDescription() != null) p.setDescription(r.getDescription());
         if (r.getBio() != null) p.setBio(r.getBio());
-        if (r.getExperienceText() != null) p.setExperienceText(r.getExperienceText());
         if (r.getActivityType() != null) p.setActivityType(r.getActivityType());
         if (r.getExperienceLevel() != null) p.setExperienceLevel(r.getExperienceLevel());
-        if (r.getProjectFormatsJson() != null) p.setProjectFormatsJson(r.getProjectFormatsJson());
-        if (r.getAchievements() != null) p.setAchievements(r.getAchievements());
-        if (r.getSkillsJson() != null) p.setSkillsJson(r.getSkillsJson());
+        if (r.getProjectFormats() != null) p.setProjectFormatsJson(r.getProjectFormats());
+        if (r.getCaseHighlights() != null) p.setAchievements(r.getCaseHighlights());
+        if (r.getSkills() != null) p.setSkillsJson(r.getSkills());
         if (r.getMinRate() != null) p.setMinRate(r.getMinRate());
         if (r.getRateUnit() != null) p.setRateUnit(r.getRateUnit());
-        if (r.getSocialLinksJson() != null) p.setSocialLinksJson(r.getSocialLinksJson());
+        if (r.getWebsiteUrl() != null) p.setSocialLinksJson(r.getWebsiteUrl());
 
         setContacts(p, r);
 
@@ -408,7 +405,7 @@ public class ProfileService {
             p.setContactEmail(c.getContactEmail());
             p.setContactWhatsapp(c.getContactWhatsapp());
             p.setContactTelegram(c.getContactTelegram());
-            p.setContactInstagram(c.getContactInstagram());
+            p.setContactInstagram(c.getInstagramUrl());
         }
 
         if (r instanceof UpdateCreatorProfileRequest c) {
@@ -416,7 +413,7 @@ public class ProfileService {
             if (c.getContactEmail() != null) p.setContactEmail(c.getContactEmail());
             if (c.getContactWhatsapp() != null) p.setContactWhatsapp(c.getContactWhatsapp());
             if (c.getContactTelegram() != null) p.setContactTelegram(c.getContactTelegram());
-            if (c.getContactInstagram() != null) p.setContactInstagram(c.getContactInstagram());
+            if (c.getInstagramUrl() != null) p.setContactInstagram(c.getInstagramUrl());
         }
 
         if (r instanceof CreateLocationProfileRequest l) {
@@ -489,6 +486,7 @@ public class ProfileService {
         r.setGameAgeFrom(p.getGameAgeFrom());
         r.setGameAgeTo(p.getGameAgeTo());
         r.setSkillsJson(p.getSkillsJson());
+        r.setSkills(p.getSkillsJson());
         r.setIntroVideoUrl(normalizeUrl(p.getIntroVideoUrl()));
         r.setMonologueVideoUrl(normalizeUrl(p.getMonologueVideoUrl()));
         r.setSelfTapeVideoUrl(normalizeUrl(p.getSelfTapeVideoUrl()));
@@ -499,6 +497,8 @@ public class ProfileService {
         r.setProjectFormatsJson(p.getProjectFormatsJson());
         r.setAchievements(p.getAchievements());
         r.setSocialLinksJson(p.getSocialLinksJson());
+        r.setProjectFormats(p.getProjectFormatsJson());
+        r.setCaseHighlights(p.getAchievements());
 
         r.setLocationName(p.getLocationName());
         r.setAddress(p.getAddress());
@@ -520,6 +520,8 @@ public class ProfileService {
         r.setContactWhatsapp(p.getContactWhatsapp());
         r.setContactTelegram(p.getContactTelegram());
         r.setContactInstagram(p.getContactInstagram());
+        r.setWebsiteUrl(extractWebsiteUrl(p.getSocialLinksJson()));
+        r.setInstagramUrl(p.getContactInstagram());
 
         if (includePremiumOffer && p.getType() != null) {
             CustomerSubscriptionPlan plan = getActivePlanOrNull();
@@ -606,6 +608,10 @@ public class ProfileService {
 
     private boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    private String extractWebsiteUrl(String socialLinksJson) {
+        return isBlank(socialLinksJson) ? null : socialLinksJson;
     }
 
     private boolean isPremiumActive(PerformerProfile profile) {
