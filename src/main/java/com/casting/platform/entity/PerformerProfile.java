@@ -82,6 +82,8 @@ public class PerformerProfile {
     // =====================
 
     private String activityType;
+    @Column(columnDefinition = "TEXT")
+    private String activityTypesJson;
     private String experienceLevel;
     @Column(columnDefinition = "TEXT")
     private String projectFormatsJson;

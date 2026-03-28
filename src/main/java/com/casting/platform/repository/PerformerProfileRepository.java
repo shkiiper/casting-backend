@@ -96,7 +96,24 @@ public interface PerformerProfileRepository
                     (p.premium_until IS NOT NULL AND p.premium_until > CURRENT_TIMESTAMP)
                     OR (
                         (:city IS NULL OR p.city ILIKE CONCAT('%', :city, '%'))
-                        AND (:activityType IS NULL OR p.activity_type = :activityType)
+                        AND (
+                            :activityTypesCsv IS NULL
+                            OR EXISTS (
+                                SELECT 1
+                                FROM jsonb_array_elements_text(
+                                    CASE
+                                        WHEN p.activity_types_json IS NULL OR BTRIM(p.activity_types_json) = '' THEN '[]'::jsonb
+                                        ELSE p.activity_types_json::jsonb
+                                    END
+                                ) AS activity(value)
+                                WHERE activity.value = ANY(string_to_array(:activityTypesCsv, ','))
+                            )
+                            OR (
+                                (p.activity_types_json IS NULL OR BTRIM(p.activity_types_json) = '')
+                                AND p.activity_type IS NOT NULL
+                                AND p.activity_type = ANY(string_to_array(:activityTypesCsv, ','))
+                            )
+                        )
                     )
               )
             ORDER BY
@@ -116,7 +133,24 @@ public interface PerformerProfileRepository
                     (p.premium_until IS NOT NULL AND p.premium_until > CURRENT_TIMESTAMP)
                     OR (
                         (:city IS NULL OR p.city ILIKE CONCAT('%', :city, '%'))
-                        AND (:activityType IS NULL OR p.activity_type = :activityType)
+                        AND (
+                            :activityTypesCsv IS NULL
+                            OR EXISTS (
+                                SELECT 1
+                                FROM jsonb_array_elements_text(
+                                    CASE
+                                        WHEN p.activity_types_json IS NULL OR BTRIM(p.activity_types_json) = '' THEN '[]'::jsonb
+                                        ELSE p.activity_types_json::jsonb
+                                    END
+                                ) AS activity(value)
+                                WHERE activity.value = ANY(string_to_array(:activityTypesCsv, ','))
+                            )
+                            OR (
+                                (p.activity_types_json IS NULL OR BTRIM(p.activity_types_json) = '')
+                                AND p.activity_type IS NOT NULL
+                                AND p.activity_type = ANY(string_to_array(:activityTypesCsv, ','))
+                            )
+                        )
                     )
               )
             """,
@@ -124,7 +158,7 @@ public interface PerformerProfileRepository
     Page<PerformerProfile> findCreatorsWithFilters(
             String type,
             String city,
-            String activityType,
+            String activityTypesCsv,
             Pageable pageable
     );
 

@@ -12,6 +12,8 @@ import com.casting.platform.repository.CustomerSubscriptionPlanRepository;
 import com.casting.platform.repository.PerformerProfileRepository;
 import com.casting.platform.repository.UserRepository;
 import com.casting.platform.security.UserPrincipal;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -32,6 +35,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final PerformerProfileRepository profileRepository;
     private final CustomerSubscriptionPlanRepository planRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.publicApiUrl:http://localhost:8080}")
     private String publicUrl;
@@ -248,7 +252,9 @@ public class ProfileService {
         p.setMainPhotoUrl(r.getMainPhotoUrl());
         p.setDescription(r.getDescription());
         p.setBio(r.getBio());
-        p.setActivityType(r.getActivityType());
+        List<String> activityTypes = resolveActivityTypes(r.getActivityTypes(), r.getActivityType());
+        p.setActivityTypesJson(writeActivityTypes(activityTypes));
+        p.setActivityType(toLegacyActivityType(activityTypes));
         p.setExperienceLevel(r.getExperienceLevel());
         p.setProjectFormatsJson(r.getProjectFormats());
         p.setAchievements(r.getCaseHighlights());
@@ -328,7 +334,15 @@ public class ProfileService {
         if (r.getMainPhotoUrl() != null) p.setMainPhotoUrl(r.getMainPhotoUrl());
         if (r.getDescription() != null) p.setDescription(r.getDescription());
         if (r.getBio() != null) p.setBio(r.getBio());
-        if (r.getActivityType() != null) p.setActivityType(r.getActivityType());
+        if (r.getActivityTypes() != null) {
+            List<String> activityTypes = resolveActivityTypes(r.getActivityTypes(), null);
+            p.setActivityTypesJson(writeActivityTypes(activityTypes));
+            p.setActivityType(toLegacyActivityType(activityTypes));
+        } else if (r.getActivityType() != null) {
+            List<String> activityTypes = resolveActivityTypes(null, r.getActivityType());
+            p.setActivityTypesJson(writeActivityTypes(activityTypes));
+            p.setActivityType(toLegacyActivityType(activityTypes));
+        }
         if (r.getExperienceLevel() != null) p.setExperienceLevel(r.getExperienceLevel());
         if (r.getProjectFormats() != null) p.setProjectFormatsJson(r.getProjectFormats());
         if (r.getCaseHighlights() != null) p.setAchievements(r.getCaseHighlights());
@@ -491,7 +505,9 @@ public class ProfileService {
         r.setMonologueVideoUrl(normalizeUrl(p.getMonologueVideoUrl()));
         r.setSelfTapeVideoUrl(normalizeUrl(p.getSelfTapeVideoUrl()));
 
-        r.setActivityType(p.getActivityType());
+        List<String> activityTypes = resolveActivityTypes(p);
+        r.setActivityTypes(activityTypes);
+        r.setActivityType(toLegacyActivityType(activityTypes));
         r.setExperienceText(p.getExperienceText());
         r.setExperienceLevel(p.getExperienceLevel());
         r.setProjectFormatsJson(p.getProjectFormatsJson());
@@ -608,6 +624,57 @@ public class ProfileService {
 
     private boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    private List<String> resolveActivityTypes(List<String> activityTypes, String legacyActivityType) {
+        if (activityTypes != null) {
+            return activityTypes.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .distinct()
+                    .toList();
+        }
+
+        if (isBlank(legacyActivityType)) {
+            return List.of();
+        }
+
+        return java.util.Arrays.stream(legacyActivityType.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private List<String> resolveActivityTypes(PerformerProfile profile) {
+        if (!isBlank(profile.getActivityTypesJson())) {
+            try {
+                return objectMapper.readValue(profile.getActivityTypesJson(), new TypeReference<List<String>>() {})
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isBlank())
+                        .distinct()
+                        .toList();
+            } catch (Exception ignored) {
+                // Fall back to the legacy field when stored JSON is malformed.
+            }
+        }
+
+        return resolveActivityTypes(null, profile.getActivityType());
+    }
+
+    private String writeActivityTypes(List<String> activityTypes) {
+        try {
+            return objectMapper.writeValueAsString(activityTypes == null ? List.of() : activityTypes);
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid activityTypes payload");
+        }
+    }
+
+    private String toLegacyActivityType(List<String> activityTypes) {
+        return activityTypes == null || activityTypes.isEmpty() ? null : String.join(", ", activityTypes);
     }
 
     private String extractWebsiteUrl(String socialLinksJson) {

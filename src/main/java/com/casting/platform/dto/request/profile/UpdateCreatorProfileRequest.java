@@ -38,6 +38,7 @@ public class UpdateCreatorProfileRequest {
     @Size(max = 5000)
     private String skills;
     private String activityType;
+    private List<String> activityTypes;
 
     private Boolean published;
 

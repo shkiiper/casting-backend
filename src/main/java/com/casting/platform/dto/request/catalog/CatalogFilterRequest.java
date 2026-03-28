@@ -4,6 +4,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Data
 public class CatalogFilterRequest {
 
@@ -30,6 +33,7 @@ public class CatalogFilterRequest {
 
     // Креаторы (например: "PHOTOGRAPHER", "DIRECTOR", ...)
     private String activityType;
+    private List<String> activityTypes;
 
     // Локации
     private Double minRentPrice;
@@ -42,4 +46,16 @@ public class CatalogFilterRequest {
     @Min(1)
     @Max(100)
     private Integer size = 20;
+
+    public void setActivityTypes(String activityTypes) {
+        if (activityTypes == null) {
+            this.activityTypes = null;
+            return;
+        }
+
+        this.activityTypes = Arrays.stream(activityTypes.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .toList();
+    }
 }

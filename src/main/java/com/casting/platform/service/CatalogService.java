@@ -6,6 +6,8 @@ import com.casting.platform.dto.response.profile.ProfileResponse;
 import com.casting.platform.entity.PerformerProfile;
 import com.casting.platform.entity.PerformerType;
 import com.casting.platform.repository.PerformerProfileRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ import java.util.List;
 public class CatalogService {
 
     private final PerformerProfileRepository profileRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.publicApiUrl:http://localhost:8080}")
     private String publicUrl;
@@ -60,7 +64,7 @@ public class CatalogService {
                 profileRepository.findCreatorsWithFilters(
                         PerformerType.CREATOR.name(),
                         emptyToNull(filters.getCity()),
-                        emptyToNull(filters.getActivityType()),
+                        toCsv(resolveCreatorActivityTypes(filters)),
                         pageable
                 );
 
@@ -163,7 +167,8 @@ public class CatalogService {
         dto.setGameAgeFrom(profile.getGameAgeFrom());
         dto.setGameAgeTo(profile.getGameAgeTo());
         dto.setSkillsJson(profile.getSkillsJson());
-        dto.setActivityType(profile.getActivityType());
+        dto.setActivityTypes(resolveActivityTypes(profile));
+        dto.setActivityType(toLegacyActivityType(resolveActivityTypes(profile)));
         dto.setExperienceLevel(profile.getExperienceLevel());
         dto.setProjectFormatsJson(profile.getProjectFormatsJson());
         dto.setLocationName(profile.getLocationName());
@@ -192,6 +197,57 @@ public class CatalogService {
 
     private String emptyToNull(String value) {
         return (value == null || value.isBlank()) ? null : value;
+    }
+
+    private List<String> resolveCreatorActivityTypes(CatalogFilterRequest filters) {
+        if (filters.getActivityTypes() != null) {
+            return filters.getActivityTypes().stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .distinct()
+                    .toList();
+        }
+
+        return splitLegacyActivityTypes(filters.getActivityType());
+    }
+
+    private List<String> resolveActivityTypes(PerformerProfile profile) {
+        if (profile.getActivityTypesJson() != null && !profile.getActivityTypesJson().isBlank()) {
+            try {
+                return objectMapper.readValue(profile.getActivityTypesJson(), new TypeReference<List<String>>() {})
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isBlank())
+                        .distinct()
+                        .toList();
+            } catch (Exception ignored) {
+                // Fall back to legacy string when old data is malformed.
+            }
+        }
+
+        return splitLegacyActivityTypes(profile.getActivityType());
+    }
+
+    private List<String> splitLegacyActivityTypes(String activityType) {
+        if (activityType == null || activityType.isBlank()) {
+            return List.of();
+        }
+
+        return java.util.Arrays.stream(activityType.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private String toLegacyActivityType(List<String> activityTypes) {
+        return activityTypes.isEmpty() ? null : String.join(", ", activityTypes);
+    }
+
+    private String toCsv(List<String> values) {
+        return values == null || values.isEmpty() ? null : String.join(",", values);
     }
 
     private boolean isPremiumActive(PerformerProfile profile) {

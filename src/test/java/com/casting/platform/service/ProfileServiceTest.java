@@ -139,7 +139,7 @@ class ProfileServiceTest {
         request.setProjectFormats("[\"reels\",\"ads\"]");
         request.setCaseHighlights("Top campaigns");
         request.setSkills("[\"direction\",\"editing\"]");
-        request.setActivityType("director");
+        request.setActivityTypes(List.of("director", "operator"));
         request.setMinRate(new java.math.BigDecimal("1500"));
         request.setRateUnit("PROJECT");
         request.setContactPhone("+996700000000");
@@ -154,12 +154,16 @@ class ProfileServiceTest {
         ProfileResponse response = profileService.updateCreatorProfile(request);
 
         assertTrue(profile.isPublished());
+        assertEquals("[\"director\",\"operator\"]", profile.getActivityTypesJson());
+        assertEquals("director, operator", profile.getActivityType());
         assertEquals("[\"reels\",\"ads\"]", profile.getProjectFormatsJson());
         assertEquals("Top campaigns", profile.getAchievements());
         assertEquals("[\"direction\",\"editing\"]", profile.getSkillsJson());
         assertEquals("https://site.example", profile.getSocialLinksJson());
         assertEquals("https://instagram.com/creator", profile.getContactInstagram());
 
+        assertEquals(List.of("director", "operator"), response.getActivityTypes());
+        assertEquals("director, operator", response.getActivityType());
         assertEquals("[\"reels\",\"ads\"]", response.getProjectFormats());
         assertEquals("Top campaigns", response.getCaseHighlights());
         assertEquals("[\"direction\",\"editing\"]", response.getSkills());

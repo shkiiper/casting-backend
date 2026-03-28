@@ -62,6 +62,7 @@ public class ProfileResponse {
 
     // Creator
     private String activityType;
+    private List<String> activityTypes;
     private String experienceText;
     private String experienceLevel;
     private String projectFormatsJson;
