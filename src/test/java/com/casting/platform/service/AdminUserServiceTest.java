@@ -2,6 +2,7 @@ package com.casting.platform.service;
 
 import com.casting.platform.entity.PerformerProfile;
 import com.casting.platform.entity.User;
+import com.casting.platform.entity.UserRole;
 import com.casting.platform.repository.CastingPostRepository;
 import com.casting.platform.repository.ContactViewRepository;
 import com.casting.platform.repository.CustomerSubscriptionRepository;
@@ -16,9 +17,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.inOrder;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
@@ -57,6 +64,41 @@ class AdminUserServiceTest {
 
     @InjectMocks
     private AdminUserService adminUserService;
+
+    @Test
+    void getUsersIncludesNormalizedProfilePhotos() {
+        User user = new User();
+        user.setId(35L);
+        user.setEmail("actor@example.com");
+        user.setRole(UserRole.ACTOR);
+
+        PerformerProfile profile = new PerformerProfile();
+        profile.setId(12L);
+        profile.setOwner(user);
+        profile.setMainPhotoUrl("/uploads/images/main.jpg");
+        profile.setPhotoUrls(new LinkedHashSet<>(List.of(
+                "/uploads/images/main.jpg",
+                "https://cdn.example.com/second.jpg"
+        )));
+        user.setPerformerProfile(profile);
+
+        when(userRepository.findAll(org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<User>>any(), org.mockito.ArgumentMatchers.any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(user)));
+
+        ReflectionTestUtils.setField(adminUserService, "publicUrl", "https://onsetcasting.com");
+
+        var response = adminUserService.getUsers(0, 20, null, null, null, null);
+
+        assertEquals(1, response.getContent().size());
+        assertEquals("https://onsetcasting.com/uploads/images/main.jpg", response.getContent().get(0).getMainPhotoUrl());
+        assertEquals(
+                List.of(
+                        "https://onsetcasting.com/uploads/images/main.jpg",
+                        "https://cdn.example.com/second.jpg"
+                ),
+                response.getContent().get(0).getPhotoUrls()
+        );
+    }
 
     @Test
     void deleteUserDeletesDependenciesBeforeProfileAndUser() {

@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class AdminUserResponse {
@@ -19,6 +20,8 @@ public class AdminUserResponse {
     private String firstName;
     private String lastName;
     private String displayName;
+    private String mainPhotoUrl;
+    private List<String> photoUrls;
 
     private String contactPhone;
     private String contactEmail;

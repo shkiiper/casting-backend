@@ -18,6 +18,7 @@ import com.casting.platform.repository.UserRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +45,9 @@ public class AdminUserService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+
+    @Value("${app.publicApiUrl:http://localhost:8080}")
+    private String publicUrl;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserResponse> getUsers(
@@ -227,6 +232,8 @@ public class AdminUserService {
             r.setFirstName(p.getFirstName());
             r.setLastName(p.getLastName());
             r.setDisplayName(p.getDisplayName());
+            r.setMainPhotoUrl(resolveMainPhotoUrl(user, p));
+            r.setPhotoUrls(normalizeUrls(p.getPhotoUrls()));
             r.setContactPhone(firstNonBlank(p.getContactPhone(), user.getPhone()));
             r.setContactEmail(firstNonBlank(p.getContactEmail(), user.getEmail()));
             r.setContactTelegram(firstNonBlank(p.getContactTelegram(), user.getTelegram()));
@@ -235,6 +242,8 @@ public class AdminUserService {
             r.setRateUnit(p.getRateUnit() != null ? p.getRateUnit() : p.getRentPriceUnit());
             r.setPublished(p.isPublished());
         } else {
+            r.setMainPhotoUrl(normalizeUrl(user.getAvatarUrl()));
+            r.setPhotoUrls(List.of());
             r.setContactPhone(user.getPhone());
             r.setContactEmail(user.getEmail());
             r.setContactTelegram(user.getTelegram());
@@ -255,6 +264,49 @@ public class AdminUserService {
             }
         }
         return null;
+    }
+
+    private String resolveMainPhotoUrl(User user, PerformerProfile profile) {
+        String mainPhotoUrl = firstNonBlank(
+                profile.getMainPhotoUrl(),
+                firstPhoto(profile.getPhotoUrls()),
+                user.getAvatarUrl()
+        );
+        return normalizeUrl(mainPhotoUrl);
+    }
+
+    private String firstPhoto(Set<String> photoUrls) {
+        if (photoUrls == null || photoUrls.isEmpty()) {
+            return null;
+        }
+        return photoUrls.iterator().next();
+    }
+
+    private List<String> normalizeUrls(Set<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+            return List.of();
+        }
+
+        return urls.stream()
+                .map(this::normalizeUrl)
+                .toList();
+    }
+
+    private String normalizeUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
+
+        String base = publicUrl.endsWith("/")
+                ? publicUrl.substring(0, publicUrl.length() - 1)
+                : publicUrl;
+
+        String path = url.startsWith("/") ? url : "/" + url;
+        return base + path;
     }
 
     private void validateProfileBeforePublish(PerformerProfile profile) {
