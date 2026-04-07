@@ -22,6 +22,7 @@ public class ProfileResponse {
     private String city;
     private String mainPhotoUrl;
     private List<String> photoUrls;
+    private List<String> portfolioPhotoUrls;
     private List<String> videoUrls;
 
     private String description;

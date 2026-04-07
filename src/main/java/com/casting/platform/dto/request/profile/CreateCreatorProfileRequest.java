@@ -61,6 +61,7 @@ public class CreateCreatorProfileRequest {
     private String instagramUrl;
 
     private List<String> photoUrls;
+    private List<String> portfolioPhotoUrls;
     private List<String> videoUrls;
 
     @JsonSetter("projectFormats")

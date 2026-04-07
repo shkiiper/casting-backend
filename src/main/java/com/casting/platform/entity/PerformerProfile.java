@@ -131,6 +131,13 @@ public class PerformerProfile {
     @Column(name = "photo_url")
     private Set<String> photoUrls = new LinkedHashSet<>();
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "creator_portfolio_photos",
+            joinColumns = @JoinColumn(name = "profile_id")
+    )
+    @Column(name = "photo_url")
+    private Set<String> portfolioPhotoUrls = new LinkedHashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(

@@ -264,6 +264,7 @@ public class ProfileService {
         p.setSocialLinksJson(r.getWebsiteUrl());
         setContacts(p, r);
         p.setPhotoUrls(toSet(r.getPhotoUrls()));
+        p.setPortfolioPhotoUrls(toSet(r.getPortfolioPhotoUrls()));
         p.setVideoUrls(toSet(r.getVideoUrls()));
         syncMainPhotoWithGallery(p);
         handlePublishToggle(p, r.getPublished());
@@ -354,6 +355,7 @@ public class ProfileService {
         setContacts(p, r);
 
         if (r.getPhotoUrls() != null) p.setPhotoUrls(toSet(r.getPhotoUrls()));
+        if (r.getPortfolioPhotoUrls() != null) p.setPortfolioPhotoUrls(toSet(r.getPortfolioPhotoUrls()));
         if (r.getVideoUrls() != null) p.setVideoUrls(toSet(r.getVideoUrls()));
         syncMainPhotoWithGallery(p);
 
@@ -478,6 +480,11 @@ public class ProfileService {
                 p.getPhotoUrls() == null
                         ? List.of()
                         : p.getPhotoUrls().stream().map(this::normalizeUrl).toList()
+        );
+        r.setPortfolioPhotoUrls(
+                p.getPortfolioPhotoUrls() == null
+                        ? List.of()
+                        : p.getPortfolioPhotoUrls().stream().map(this::normalizeUrl).toList()
         );
 
         r.setVideoUrls(

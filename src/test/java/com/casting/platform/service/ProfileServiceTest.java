@@ -149,6 +149,7 @@ class ProfileServiceTest {
         request.setWebsiteUrl("https://site.example");
         request.setInstagramUrl("https://instagram.com/creator");
         request.setPhotoUrls(List.of("/uploads/images/main.jpg", "/uploads/images/second.jpg"));
+        request.setPortfolioPhotoUrls(List.of("/uploads/images/portfolio-1.jpg", "/uploads/images/portfolio-2.jpg"));
         request.setVideoUrls(List.of("https://video.example/showreel"));
 
         ProfileResponse response = profileService.updateCreatorProfile(request);
@@ -161,6 +162,10 @@ class ProfileServiceTest {
         assertEquals("[\"direction\",\"editing\"]", profile.getSkillsJson());
         assertEquals("https://site.example", profile.getSocialLinksJson());
         assertEquals("https://instagram.com/creator", profile.getContactInstagram());
+        assertEquals(
+                List.of("/uploads/images/portfolio-1.jpg", "/uploads/images/portfolio-2.jpg"),
+                List.copyOf(profile.getPortfolioPhotoUrls())
+        );
 
         assertEquals(List.of("director", "operator"), response.getActivityTypes());
         assertEquals("director, operator", response.getActivityType());
@@ -169,5 +174,12 @@ class ProfileServiceTest {
         assertEquals("[\"direction\",\"editing\"]", response.getSkills());
         assertEquals("https://site.example", response.getWebsiteUrl());
         assertEquals("https://instagram.com/creator", response.getInstagramUrl());
+        assertEquals(
+                List.of(
+                        "https://onsetcasting.com/uploads/images/portfolio-1.jpg",
+                        "https://onsetcasting.com/uploads/images/portfolio-2.jpg"
+                ),
+                response.getPortfolioPhotoUrls()
+        );
     }
 }
