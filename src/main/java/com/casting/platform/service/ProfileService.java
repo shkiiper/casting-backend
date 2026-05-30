@@ -694,7 +694,7 @@ public class ProfileService {
 
     private CustomerSubscriptionPlan getActivePlanOrNull() {
         var activePlans = planRepository.findByActiveTrueOrderByIdAsc();
-        if (activePlans.size() != 1) {
+        if (activePlans.isEmpty()) {
             return null;
         }
         return activePlans.get(0);

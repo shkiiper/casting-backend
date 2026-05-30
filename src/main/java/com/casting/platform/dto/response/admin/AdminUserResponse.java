@@ -34,6 +34,7 @@ public class AdminUserResponse {
     private boolean active;
     private boolean banned;
     private boolean published;
+    private boolean emailVerified;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

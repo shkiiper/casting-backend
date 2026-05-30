@@ -214,4 +214,42 @@ class AdminUserServiceTest {
                 () -> adminUserService.sendMissingPhotoReminder(15L)
         );
     }
+
+    @Test
+    void resendRegistrationVerificationCodeCreatesNewCodeAndSendsEmail() {
+        User user = new User();
+        user.setId(16L);
+        user.setEmail("icloud-user@icloud.com");
+        user.setEmailVerified(false);
+
+        when(userRepository.findById(16L)).thenReturn(Optional.of(user));
+
+        adminUserService.resendRegistrationVerificationCode(16L);
+
+        verify(emailVerificationTokenRepository).deleteByUserId(16L);
+        verify(emailVerificationTokenRepository).flush();
+        verify(emailVerificationTokenRepository).save(org.mockito.ArgumentMatchers.argThat(token ->
+                token.getUser() == user
+                        && token.getCode() != null
+                        && token.getCode().matches("\\d{6}")
+                        && token.getToken() != null
+                        && token.getExpiresAt() != null
+        ));
+        verify(emailService).sendVerificationCode(org.mockito.ArgumentMatchers.eq("icloud-user@icloud.com"), org.mockito.ArgumentMatchers.matches("\\d{6}"));
+    }
+
+    @Test
+    void resendRegistrationVerificationCodeFailsWhenEmailAlreadyVerified() {
+        User user = new User();
+        user.setId(17L);
+        user.setEmail("verified@example.com");
+        user.setEmailVerified(true);
+
+        when(userRepository.findById(17L)).thenReturn(Optional.of(user));
+
+        Assertions.assertThrows(
+                com.casting.platform.exception.BadRequestException.class,
+                () -> adminUserService.resendRegistrationVerificationCode(17L)
+        );
+    }
 }

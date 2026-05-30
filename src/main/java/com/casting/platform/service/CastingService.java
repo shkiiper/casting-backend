@@ -43,9 +43,6 @@ public class CastingService {
         if (activePlans.isEmpty()) {
             throw new BadRequestException("No active subscription plan configured");
         }
-        if (activePlans.size() > 1) {
-            throw new BadRequestException("Multiple active subscription plans configured");
-        }
         return activePlans.get(0);
     }
 

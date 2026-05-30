@@ -67,6 +67,12 @@ public class AdminUserController {
         return new MessageResponse("Photo reminder email sent");
     }
 
+    @PostMapping("/{userId}/resend-verification-code")
+    public MessageResponse resendVerificationCode(@PathVariable Long userId) {
+        adminUserService.resendRegistrationVerificationCode(userId);
+        return new MessageResponse("Verification code sent");
+    }
+
     @DeleteMapping("/{userId}")
     public MessageResponse delete(@PathVariable Long userId) {
         adminUserService.deleteUser(userId);

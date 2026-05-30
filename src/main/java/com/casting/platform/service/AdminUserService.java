@@ -2,6 +2,7 @@ package com.casting.platform.service;
 
 import com.casting.platform.dto.common.PageResponse;
 import com.casting.platform.dto.response.admin.AdminUserResponse;
+import com.casting.platform.entity.EmailVerificationToken;
 import com.casting.platform.entity.PerformerProfile;
 import com.casting.platform.entity.User;
 import com.casting.platform.entity.UserRole;
@@ -26,10 +27,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +52,11 @@ public class AdminUserService {
 
     @Value("${app.publicApiUrl:http://localhost:8080}")
     private String publicUrl;
+
+    @Value("${app.tokens.emailVerificationTtlMinutes:10}")
+    private long emailVerificationTtlMinutes;
+
+    private static final SecureRandom random = new SecureRandom();
 
     @Transactional(readOnly = true)
     public PageResponse<AdminUserResponse> getUsers(
@@ -124,6 +133,27 @@ public class AdminUserService {
         }
 
         emailService.sendMissingPhotoReminderEmail(user.getEmail());
+    }
+
+    public void resendRegistrationVerificationCode(Long userId) {
+        User user = getUserOrThrow(userId);
+
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("User email is already verified");
+        }
+
+        emailVerificationTokenRepository.deleteByUserId(userId);
+        emailVerificationTokenRepository.flush();
+
+        String code = generateCode();
+        EmailVerificationToken token = new EmailVerificationToken();
+        token.setUser(user);
+        token.setCode(code);
+        token.setToken(UUID.randomUUID().toString());
+        token.setExpiresAt(LocalDateTime.now().plusMinutes(emailVerificationTtlMinutes));
+
+        emailVerificationTokenRepository.save(token);
+        emailService.sendVerificationCode(user.getEmail(), code);
     }
 
     public void deleteUser(Long userId) {
@@ -252,6 +282,7 @@ public class AdminUserService {
 
         r.setActive(user.isActive());
         r.setBanned(user.isBanned());
+        r.setEmailVerified(user.isEmailVerified());
         r.setCreatedAt(user.getCreatedAt());
         r.setUpdatedAt(user.getUpdatedAt());
         return r;
@@ -334,5 +365,10 @@ public class AdminUserService {
         }
 
         return profile != null && hasProfilePhoto(profile);
+    }
+
+    private String generateCode() {
+        int number = 100000 + random.nextInt(900000);
+        return String.valueOf(number);
     }
 }

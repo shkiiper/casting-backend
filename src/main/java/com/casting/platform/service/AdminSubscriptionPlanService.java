@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -109,9 +108,6 @@ public class AdminSubscriptionPlanService {
         plan.setPeriodDays(req.getPeriodDays());
         plan.setBaseContactLimit(req.getBaseContactLimit());
         plan.setActive(req.isActive());
-        if (req.isActive()) {
-            deactivateOtherPlans(plan.getId());
-        }
     }
 
     private void validateRequest(AdminSubscriptionPlanRequest req) {
@@ -144,16 +140,6 @@ public class AdminSubscriptionPlanService {
         }
         if (value.signum() < 0) {
             throw new BadRequestException(fieldName + " cannot be negative");
-        }
-    }
-
-    private void deactivateOtherPlans(Long currentPlanId) {
-        List<CustomerSubscriptionPlan> activePlans = planRepository.findByActiveTrueOrderByIdAsc();
-        for (CustomerSubscriptionPlan activePlan : activePlans) {
-            if (currentPlanId != null && currentPlanId.equals(activePlan.getId())) {
-                continue;
-            }
-            activePlan.setActive(false);
         }
     }
 
