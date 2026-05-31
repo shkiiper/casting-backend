@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +52,8 @@ public class CustomerSubscriptionService {
         info.setPlanName(subscription.getPlan().getName());
         info.setTotalLimit(subscription.getTotalContactLimit());
         info.setRemainingContacts(subscription.getTotalContactLimit() - subscription.getUsedContacts());
+        info.setExpiresAt(subscription.getExpiresAt());
+        info.setDaysRemaining(calculateDaysRemaining(subscription.getExpiresAt()));
         return info;
     }
 
@@ -150,6 +153,17 @@ public class CustomerSubscriptionService {
     private CustomerSubscription getActiveSubscription(User customer) {
         return subscriptionRepository.findActiveSubscription(customer, LocalDateTime.now())
                 .orElseThrow(() -> new LimitExceededException("No active subscription"));
+    }
+
+    private long calculateDaysRemaining(LocalDateTime expiresAt) {
+        if (expiresAt == null) {
+            return 0;
+        }
+        long seconds = Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
+        if (seconds <= 0) {
+            return 0;
+        }
+        return (seconds + 86_399) / 86_400;
     }
 
 
