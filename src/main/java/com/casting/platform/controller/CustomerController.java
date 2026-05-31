@@ -1,6 +1,7 @@
 package com.casting.platform.controller;
 
 import com.casting.platform.dto.request.customer.UpdateCustomerProfileRequest;
+import com.casting.platform.dto.response.customer.ContactInfoResponse;
 import com.casting.platform.dto.response.customer.CustomerPlanResponse;
 import com.casting.platform.dto.response.customer.CustomerProfileResponse;
 import com.casting.platform.dto.response.customer.SubscriptionInfoResponse;
@@ -43,5 +44,10 @@ public class CustomerController {
     @GetMapping("/plans")
     public List<CustomerPlanResponse> plans() {
         return customerPlanService.getActivePlans();
+    }
+
+    @PostMapping("/profiles/{profileId}/contacts")
+    public ContactInfoResponse showProfileContacts(@PathVariable Long profileId) {
+        return subscriptionService.showContacts(profileId);
     }
 }

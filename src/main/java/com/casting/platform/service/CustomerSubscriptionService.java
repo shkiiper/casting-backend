@@ -64,22 +64,16 @@ public class CustomerSubscriptionService {
      * - возвращаем контакты (только при активной подписке)
      */
     public ContactInfoResponse showContacts(Long profileId) {
-        System.out.println("showContacts() called, profileId = " + profileId);
-
         User customer = getCurrentCustomer();
-        System.out.println("customer id = " + customer.getId());
 
-        CustomerSubscription subscription = getActiveSubscription(customer);
-        System.out.println("subscription id = " + subscription.getId());
+        CustomerSubscription subscription = getActiveSubscriptionForUpdate(customer);
 
         PerformerProfile profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new NotFoundException("Profile not found"));
-        System.out.println("profile id = " + profile.getId());
 
         boolean alreadyViewed = contactViewRepository
                 .findByCustomerIdAndProfileId(customer.getId(), profileId)
                 .isPresent();
-        System.out.println("alreadyViewed = " + alreadyViewed);
 
         if (!alreadyViewed) {
             if (subscription.getUsedContacts() >= subscription.getTotalContactLimit()) {
@@ -88,13 +82,11 @@ public class CustomerSubscriptionService {
 
             subscription.setUsedContacts(subscription.getUsedContacts() + 1);
             subscriptionRepository.save(subscription);
-            System.out.println("usedContacts incremented to " + subscription.getUsedContacts());
 
             ContactView view = new ContactView();
             view.setCustomer(customer);
             view.setProfile(profile);
             contactViewRepository.save(view);
-            System.out.println("ContactView saved");
         }
 
         return new ContactInfoResponse(
@@ -152,6 +144,11 @@ public class CustomerSubscriptionService {
 
     private CustomerSubscription getActiveSubscription(User customer) {
         return subscriptionRepository.findActiveSubscription(customer, LocalDateTime.now())
+                .orElseThrow(() -> new LimitExceededException("No active subscription"));
+    }
+
+    private CustomerSubscription getActiveSubscriptionForUpdate(User customer) {
+        return subscriptionRepository.findActiveSubscriptionForUpdate(customer, LocalDateTime.now())
                 .orElseThrow(() -> new LimitExceededException("No active subscription"));
     }
 
