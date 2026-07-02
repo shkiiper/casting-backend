@@ -5,6 +5,7 @@ import com.casting.platform.dto.response.auth.AuthResponse;
 import com.casting.platform.entity.EmailVerificationToken;
 import com.casting.platform.entity.PasswordResetToken;
 import com.casting.platform.entity.User;
+import com.casting.platform.entity.UserRole;
 import com.casting.platform.exception.BadRequestException;
 import com.casting.platform.exception.ForbiddenException;
 import com.casting.platform.exception.NotFoundException;
@@ -16,18 +17,14 @@ import com.casting.platform.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.casting.platform.entity.PerformerProfile;
-import com.casting.platform.entity.PerformerType;
-import com.casting.platform.repository.PerformerProfileRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.security.SecureRandom;
 
@@ -41,10 +38,8 @@ public class AuthService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
-    private final PerformerProfileRepository profileRepository;
 
     @Value("${app.tokens.emailVerificationTtlMinutes:10}")
     private long emailVerificationTtlMinutes;
@@ -63,13 +58,8 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email already exists");
-        }
-
-        if (request.getPhone() != null && !request.getPhone().isBlank()
-                && userRepository.existsByPhone(request.getPhone())) {
-            throw new BadRequestException("Phone already exists");
+        if (userRepository.existsByEmailAndRole(request.getEmail(), request.getRole())) {
+            throw new BadRequestException("Account for this email and role already exists");
         }
 
         User user = new User();
@@ -85,7 +75,7 @@ public class AuthService {
 
         createAndSendEmailCode(user);
 
-        return new AuthResponse(null, user.getRole().name());
+        return new AuthResponse(null, user.getRole().name(), getAvailableRoles(user.getEmail()));
     }
 
     /* =========================================================
@@ -94,8 +84,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        User user = resolveLoginUser(request);
 
         if (!user.isEmailVerified()) {
             throw new ForbiddenException("Email is not verified");
@@ -105,31 +94,25 @@ public class AuthService {
             throw new ForbiddenException("User disabled");
         }
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
 
         String token = jwtTokenProvider.generateToken(
-                principal.getUsername(),
-                principal.getRole()
+                user.getEmail(),
+                user.getRole()
         );
 
-        return new AuthResponse(token, principal.getRole().name());
+        return new AuthResponse(token, user.getRole().name(), getAvailableRoles(user.getEmail()));
     }
 
     /* =========================================================
        VERIFY EMAIL CODE
        ========================================================= */
 
-    public void verifyEmailCode(String email, String code) {
+    public void verifyEmailCode(String email, String code, UserRole role) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = resolveEmailRoleUser(email, role);
 
         EmailVerificationToken token =
                 emailVerificationTokenRepository
@@ -156,8 +139,7 @@ public class AuthService {
 
     public void resendVerification(ResendVerificationRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = resolveEmailRoleUser(request.getEmail(), request.getRole());
 
         if (user.isEmailVerified()) {
             return;
@@ -175,7 +157,10 @@ public class AuthService {
 
     public void forgotPassword(ForgotPasswordRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailOrderByIdAsc(request.getEmail())
+                .stream()
+                .filter(User::isEmailVerified)
+                .findFirst()
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.isEmailVerified()) {
@@ -214,6 +199,28 @@ public class AuthService {
         passwordResetTokenRepository.save(prt);
     }
 
+    public List<UserRole> getAvailableRolesForCurrentUser() {
+        return getAvailableRoles(getCurrentPrincipal().getUsername());
+    }
+
+    public AuthResponse switchRole(SwitchRoleRequest request) {
+        UserPrincipal principal = getCurrentPrincipal();
+
+        User target = userRepository.findByEmailAndRole(principal.getUsername(), request.getRole())
+                .orElseThrow(() -> new NotFoundException("Account for this role not found"));
+
+        if (!target.isEmailVerified()) {
+            throw new ForbiddenException("Email is not verified for this role");
+        }
+
+        if (!target.isActive() || target.isBanned()) {
+            throw new ForbiddenException("User disabled");
+        }
+
+        String token = jwtTokenProvider.generateToken(target.getEmail(), target.getRole());
+        return new AuthResponse(token, target.getRole().name(), getAvailableRoles(target.getEmail()));
+    }
+
     /* =========================================================
        INTERNAL
        ========================================================= */
@@ -238,5 +245,56 @@ public class AuthService {
     private String generateCode() {
         int number = 100000 + random.nextInt(900000);
         return String.valueOf(number);
+    }
+
+    private User resolveLoginUser(LoginRequest request) {
+        if (request.getRole() != null) {
+            return userRepository.findByEmailAndRole(request.getEmail(), request.getRole())
+                    .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        }
+
+        return userRepository.findByEmailOrderByIdAsc(request.getEmail())
+                .stream()
+                .filter(user -> passwordEncoder.matches(request.getPassword(), user.getPasswordHash()))
+                .findFirst()
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+    }
+
+    private User resolveEmailRoleUser(String email, UserRole role) {
+        if (role != null) {
+            return userRepository.findByEmailAndRole(email, role)
+                    .orElseThrow(() -> new NotFoundException("User not found"));
+        }
+
+        return userRepository.findByEmailOrderByIdDesc(email)
+                .stream()
+                .filter(user -> !user.isEmailVerified())
+                .findFirst()
+                .orElseGet(() -> userRepository.findByEmailOrderByIdDesc(email)
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() -> new NotFoundException("User not found")));
+    }
+
+    private List<UserRole> getAvailableRoles(String email) {
+        return userRepository.findByEmailOrderByIdAsc(email)
+                .stream()
+                .filter(user -> user.isActive() && !user.isBanned())
+                .map(User::getRole)
+                .distinct()
+                .toList();
+    }
+
+    private UserPrincipal getCurrentPrincipal() {
+        Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (!(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+            throw new ForbiddenException("Unauthenticated");
+        }
+
+        return principal;
     }
 }

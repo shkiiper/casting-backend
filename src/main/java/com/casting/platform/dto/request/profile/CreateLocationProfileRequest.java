@@ -12,20 +12,17 @@ public class CreateLocationProfileRequest {
     @NotBlank
     private String locationName;
 
-    @NotBlank
     private String address;
 
     @NotBlank
     private String city;
 
-    @NotBlank
     private String mainPhotoUrl;
 
     private String description;
 
     private BigDecimal rentPrice;
 
-    @NotBlank
     private String rentPriceUnit; // HOUR, DAY, PROJECT
 
     private Integer floor;
@@ -35,7 +32,6 @@ public class CreateLocationProfileRequest {
     private String rentalTerms;
     private String extraConditions;
 
-    @NotBlank
     private String contactPhone;
 
     private String contactEmail;

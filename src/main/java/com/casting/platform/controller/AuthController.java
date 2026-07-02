@@ -3,11 +3,14 @@ package com.casting.platform.controller;
 import com.casting.platform.dto.request.auth.*;
 import com.casting.platform.dto.response.auth.AuthResponse;
 import com.casting.platform.dto.response.common.MessageResponse;
+import com.casting.platform.entity.UserRole;
 import com.casting.platform.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,7 +46,8 @@ public class AuthController {
 
         authService.verifyEmailCode(
                 request.getEmail(),
-                request.getCode()
+                request.getCode(),
+                request.getRole()
         );
 
         return ResponseEntity.ok(
@@ -87,5 +91,17 @@ public class AuthController {
         return ResponseEntity.ok(
                 new MessageResponse("Password updated")
         );
+    }
+
+    @GetMapping("/accounts")
+    public ResponseEntity<List<UserRole>> accounts() {
+        return ResponseEntity.ok(authService.getAvailableRolesForCurrentUser());
+    }
+
+    @PostMapping("/switch-role")
+    public ResponseEntity<AuthResponse> switchRole(
+            @Valid @RequestBody SwitchRoleRequest request
+    ) {
+        return ResponseEntity.ok(authService.switchRole(request));
     }
 }
