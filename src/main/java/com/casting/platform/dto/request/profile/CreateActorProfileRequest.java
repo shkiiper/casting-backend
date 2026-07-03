@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -17,17 +16,16 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateActorProfileRequest {
     @NotBlank
-    @Size(min = 2, max = 100)
+    @Size(max = 100)
     private String firstName;
 
     @NotBlank
-    @Size(min = 2, max = 100)
+    @Size(max = 100)
     private String lastName;
 
     @Size(max = 255)
     private String city;
 
-    @NotBlank
     private String mainPhotoUrl;
 
     @Size(max = 5000)
@@ -38,7 +36,6 @@ public class CreateActorProfileRequest {
 
     private String experienceText;
 
-    @NotNull
     private String gender;
 
     @Min(14)
@@ -60,10 +57,8 @@ public class CreateActorProfileRequest {
 
     private BigDecimal minRate;
 
-    @NotNull
     private String rateUnit; // HOUR, DAY, PROJECT
 
-    @NotBlank
     private String contactPhone;
 
     private String contactEmail;

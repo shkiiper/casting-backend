@@ -1,6 +1,7 @@
 package com.casting.platform.security;
 
 import com.casting.platform.entity.User;
+import com.casting.platform.entity.UserRole;
 import com.casting.platform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.DisabledException;
@@ -17,9 +18,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailOrderByIdAsc(email)
+                .stream()
+                .findFirst()
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
+        return toPrincipal(user);
+    }
+
+    public UserDetails loadUserByEmailAndRole(String email, UserRole role)
+            throws UsernameNotFoundException {
+        User user = userRepository.findByEmailAndRole(email, role)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email + " / " + role));
+
+        return toPrincipal(user);
+    }
+
+    private UserDetails toPrincipal(User user) {
         if (!user.isActive()) {
             throw new DisabledException("User is inactive");
         }
